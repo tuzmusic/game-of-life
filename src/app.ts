@@ -4,20 +4,20 @@ export function testFunc() {
   return 42;
 }
 
-interface Cell {
+export interface Cell {
   isAlive: boolean;
   row: number;
   column: number;
 }
 
-type Board = Cell[][]
+export type Board = Cell[][]
 
-class Game {
-  constructor(board: Board) {
-    this.board = board
-  }
-  
+export class Game {
   board: Board;
+  
+  constructor(board: Board) {
+    this.board = board;
+  }
   
   findCellAt(_row: number, _column: number): Cell {
     for (let rowIndex = 0; rowIndex < this.board.length; rowIndex++) {
@@ -43,16 +43,6 @@ class Game {
       [row + 1, column - 1],
       [row + 1, column + 1],
     ];
-    /*
-    const neighborW = this.findCellAt(row, column - 1);
-    const neighborE = this.findCellAt(row, column + 1);
-    const neighborN = this.findCellAt(row - 1, column);
-    const neighborS = this.findCellAt(row + 1, column);
-    const neighborNW = this.findCellAt(row - 1, column - 1);
-    const neighborNE = this.findCellAt(row - 1, column + 1);
-    const neighborSW = this.findCellAt(row + 1, column - 1);
-    const neighborSE = this.findCellAt(row + 1, column + 1);
-*/
     
     const cells: Cell[] = [];
     coords.forEach(([r, c]) => {
@@ -69,16 +59,41 @@ class Game {
     return cells;
   }
   
-  rules(cell: Cell) {
+  printCurrentBoard() {
+    console.log('*******************');
+    for (let rowIndex = 0; rowIndex < this.board.length; rowIndex++) {
+      const thisRow = this.board[rowIndex];
+      console.log(thisRow.map(row => row.isAlive ? 'T' : 'F'));
+    }
+    console.log('*******************');
+  }
+  
+  playTurn() {
+    const tempBoard: Board = [...this.board];
+    
+    // iterate each cell in the board
+    for (let rowIndex = 0; rowIndex < this.board.length; rowIndex++) {
+      const thisRow = this.board[rowIndex];
+      for (let colIndex = 0; colIndex < thisRow.length; colIndex++) {
+        const thisCell = thisRow[colIndex];
+        this.processCell(thisCell); // MUTATES THE CELL
+      }
+    }
+    
+    this.board = [...tempBoard];
+  }
+  
+  processCell(cell: Cell) {
     const neighbors = this.neighborsFor(cell);
     const liveNeighborsCt = neighbors.filter((c: Cell) => c.isAlive).length;
     
-    if (liveNeighborsCt < 2
-    || cell.isAlive && liveNeighborsCt === 2 || liveNeighborsCt === 3
-    || cell.isAlive && liveNeighborsCt > 3)
+    if (liveNeighborsCt < 2)
       this.kill(cell);
-    
-    if (!cell.isAlive && liveNeighborsCt === 3)
+    else if (cell.isAlive && (liveNeighborsCt === 2 || liveNeighborsCt === 3))
+      this.regenerate(cell);
+    else if (liveNeighborsCt > 3)
+      this.kill(cell);
+    else if (!cell.isAlive && liveNeighborsCt === 3)
       this.regenerate(cell);
   }
   
@@ -88,5 +103,12 @@ class Game {
   
   regenerate(cell: Cell) {
     cell.isAlive = true;
+  }
+}
+
+function playTheDamnGameAlready(board: Board, turnCount = 1) {
+  const game = new Game(board);
+  for (let turn = 0; turn < turnCount; turn++) {
+    game.playTurn();
   }
 }
